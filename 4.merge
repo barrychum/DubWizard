@@ -1,0 +1,101 @@
+#!/usr/bin/env python3
+
+import os
+import sys
+import subprocess
+from pathlib import Path
+
+def check_project_parameter():
+    if len(sys.argv) != 2:
+        print("Usage: script.py <project_path>")
+        sys.exit(1)
+
+def setup_directories(project):
+    folder = os.path.join(project, 'tmp')
+    output_folder = os.path.join(project, 'output')
+    os.makedirs(folder, exist_ok=True)
+    os.makedirs(output_folder, exist_ok=True)
+    return folder, output_folder
+
+def get_video_duration(inputfile):
+    result = subprocess.run(
+        ['ffprobe', '-v', 'error', '-show_entries', 'format=duration', '-of', 'default=noprint_wrappers=1:nokey=1', inputfile],
+        stdout=subprocess.PIPE,
+        text=True
+    )
+    return result.stdout.strip()
+
+def create_silent_audio(duration, silent_file):
+    subprocess.run([
+        'ffmpeg', '-hide_banner', '-loglevel', 'error', '-f', 'lavfi', '-i', 
+        'anullsrc=channel_layout=stereo:sample_rate=24000', '-t', duration, 
+        '-ac', '1', silent_file
+    ])
+
+def process_audio(pos, audio_file, folder, silent_file):
+    pos_ms = int(float(pos) * 1000)
+    tempfile = os.path.join(folder, 'tempfile.wav')
+    
+    subprocess.run([
+        'ffmpeg', '-i', silent_file, '-i', os.path.join(folder, audio_file), 
+        '-filter_complex', f"[1:a]adelay={pos_ms}|{pos_ms}[delayed];[0:a][delayed]amix=inputs=2:duration=first:dropout_transition=0:normalize=0[out]", 
+        '-map', '[out]', '-hide_banner', '-loglevel', 'error', tempfile
+    ])
+    
+    os.replace(tempfile, silent_file)
+
+def overlay_audio_files(timestamp_file, folder, silent_file):
+    with open(timestamp_file, 'r') as f:
+        lines = f.readlines()
+    
+    timestamps = {}
+    for line in lines:
+        pos, audio_file = line.strip().split('|')
+        timestamps[audio_file] = pos
+    
+    for audio_file, pos in sorted(timestamps.items(), key=lambda item: float(item[1])):
+        print(f"{pos} : {audio_file}")
+        process_audio(pos, audio_file, folder, silent_file)
+
+def combine_audio_video(inputfile, output_folder, silent_file):
+    merged_audio = os.path.join(output_folder, 'merged.wav')
+    final_output = os.path.join(output_folder, 'final.mp4')
+    
+    os.replace(silent_file, merged_audio)
+    
+    subprocess.run([
+        'ffmpeg', '-hide_banner', '-loglevel', 'error', '-i', inputfile, 
+        '-i', merged_audio, '-c:v', 'copy', '-c:a', 'aac', '-b:a', '128k', 
+        '-ar', '44100', '-ac', '1', '-map', '0:v:0', '-map', '1:a:0', final_output
+    ])
+    
+    print(f"Completed. Please check output file {final_output}")
+
+def main():
+    check_project_parameter()
+    
+    project = sys.argv[1]
+    folder, output_folder = setup_directories(project)
+    
+    inputfile = os.path.join(project, 'input', 'video.mp4')
+    timestamp_file = os.path.join(folder, 'timestamp.txt')
+    silent_file = os.path.join(folder, 'silent.wav')
+    
+    fullpath = os.path.abspath(inputfile)
+    filename = Path(inputfile).stem
+    
+    print("\nCreating timeline audio file")
+    
+    duration = get_video_duration(inputfile)
+    create_silent_audio(duration, silent_file)
+    
+    print("\nOverlay individual audio files to timeline")
+    
+    overlay_audio_files(timestamp_file, folder, silent_file)
+    
+    print("\nCombining merged timeline audio to original video file")
+    
+    combine_audio_video(inputfile, output_folder, silent_file)
+
+if __name__ == "__main__":
+    main()

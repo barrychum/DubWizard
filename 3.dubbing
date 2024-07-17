@@ -55,7 +55,7 @@ def wait_for_mpv_to_load(socket_path):
                 client_socket.connect(socket_path)
                 return  # Exit the loop if connection is successful
         except socket.error:
-            time.sleep(1)  # Wait for 1 second before trying again
+            time.sleep(0.1)  # Wait for 0.1 second before trying again
 
 def seconds_to_timecode(seconds):
     hours = int(seconds // 3600)
@@ -115,6 +115,7 @@ class SubtitleApp(QWidget):
         self.setup_shortcuts()
         start_mpv(self.video_file)
         wait_for_mpv_to_load(mpv_socket)  # Wait for mpv to be ready
+        time.sleep(0.5)
         self.activateWindow()
         self.raise_()
         self.setFocus()
@@ -310,9 +311,11 @@ class SubtitleApp(QWidget):
 
 if __name__ == "__main__":
     # Parse command-line arguments
-    parser = argparse.ArgumentParser(description='Subtitle Application')
-    parser.add_argument('--project', type=str, required=True, help='The project parameter')
-    args = parser.parse_args()
+    if len(sys.argv) != 2:
+        print("Usage: script.py <project>")
+        sys.exit(1)
+
+    project = sys.argv[1]
 
     app = QApplication([])
 
@@ -322,7 +325,7 @@ if __name__ == "__main__":
     screen_width = screen_geometry.width()
     screen_height = screen_geometry.height()
 
-    ex = SubtitleApp(project=args.project)
+    ex = SubtitleApp(project=project)
     ex.show()
     # Reset horizontal scroll to left at startup
     ex.subtitle_text.horizontalScrollBar().setValue(0)
