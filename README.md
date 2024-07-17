@@ -84,7 +84,7 @@ We welcome contributions to improve DubWizard! If you have suggestions, bug repo
 
 ## License
 
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
+This project is licensed under the GPU License. See the [LICENSE](LICENSE) file for details.
 
 ## Contact
 
