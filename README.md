@@ -17,7 +17,7 @@ DubWizard is a powerful and user-friendly tool designed to streamline the proces
 1. **Install Dependencies**:
 
    ```sh
-   git clone https://github.com/yourusername/dubwizard.git
+   git clone https://github.com/barrychum/dubwizard.git
    cd dubwizard
    pip install -r requirements.txt
    ```
