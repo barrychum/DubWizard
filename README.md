@@ -56,17 +56,11 @@ DubWizard is a powerful and user-friendly tool designed to streamline the proces
    Final mp4 is in the output folder.
    
 
-## Contributing
-
-We welcome contributions to improve DubWizard! If you have suggestions, bug reports, or would like to contribute code, please open an issue or submit a pull request on GitHub.
-
 ## License
 
 This project utilize PyQT and is licensed under the GPU License. See the [LICENSE](LICENSE) file for details.
 
-## Contact
 
-For any questions or support, please contact [yourname@youremail.com](mailto:yourname@youremail.com).
 
 
 
